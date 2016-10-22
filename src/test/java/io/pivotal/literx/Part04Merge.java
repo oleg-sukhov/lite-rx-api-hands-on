@@ -18,11 +18,11 @@ import reactor.test.subscriber.ScriptedSubscriber;
  */
 public class Part04Merge {
 
-	final static User MARIE = new User("mschrader", "Marie", "Schrader");
-	final static User MIKE = new User("mehrmantraut", "Mike", "Ehrmantraut");
+	private final static User MARIE = new User("mschrader", "Marie", "Schrader");
+	private final static User MIKE = new User("mehrmantraut", "Mike", "Ehrmantraut");
 
-	ReactiveRepository<User> repository1 = new ReactiveUserRepository(500);
-	ReactiveRepository<User> repository2 = new ReactiveUserRepository(MARIE, MIKE);
+	private ReactiveRepository<User> repository1 = new ReactiveUserRepository(500);
+	private ReactiveRepository<User> repository2 = new ReactiveUserRepository(MARIE, MIKE);
 
 //========================================================================================
 
@@ -31,14 +31,13 @@ public class Part04Merge {
 		Flux<User> flux = mergeFluxWithInterleave(repository1.findAll(), repository2.findAll());
 		ScriptedSubscriber
 				.create()
-				.expectValues(MARIE, MIKE, User.SKYLER, User.JESSE, User.WALTER, User.SAUL)
+				.expectNext(MARIE, MIKE, User.SKYLER, User.JESSE, User.WALTER, User.SAUL)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Merge flux1 and flux2 values with interleave
-	Flux<User> mergeFluxWithInterleave(Flux<User> flux1, Flux<User> flux2) {
-		return null;
+	private Flux<User> mergeFluxWithInterleave(Flux<User> flux1, Flux<User> flux2) {
+		return flux1.mergeWith(flux2);
 	}
 
 //========================================================================================
@@ -48,14 +47,13 @@ public class Part04Merge {
 		Flux<User> flux = mergeFluxWithNoInterleave(repository1.findAll(), repository2.findAll());
 		ScriptedSubscriber
 				.create()
-				.expectValues(User.SKYLER, User.JESSE, User.WALTER, User.SAUL, MARIE, MIKE)
+				.expectNext(User.SKYLER, User.JESSE, User.WALTER, User.SAUL, MARIE, MIKE)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Merge flux1 and flux2 values with no interleave (flux1 values, and then flux2 values)
-	Flux<User> mergeFluxWithNoInterleave(Flux<User> flux1, Flux<User> flux2) {
-		return null;
+	private Flux<User> mergeFluxWithNoInterleave(Flux<User> flux1, Flux<User> flux2) {
+		return flux1.concatWith(flux2);
 	}
 
 //========================================================================================
@@ -67,14 +65,13 @@ public class Part04Merge {
 		Flux<User> flux = createFluxFromMultipleMono(skylerMono, marieMono);
 		ScriptedSubscriber
 				.create()
-				.expectValues(User.SKYLER, MARIE)
+				.expectNext(User.SKYLER, MARIE)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Create a Flux containing the values of the 2 Mono
-	Flux<User> createFluxFromMultipleMono(Mono<User> mono1, Mono<User> mono2) {
-		return null;
+	private Flux<User> createFluxFromMultipleMono(Mono<User> mono1, Mono<User> mono2) {
+		return Flux.concat(mono1, mono2);
 	}
 
 }

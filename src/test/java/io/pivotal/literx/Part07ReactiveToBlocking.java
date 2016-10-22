@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
  */
 public class Part07ReactiveToBlocking {
 
-	ReactiveRepository<User> repository = new ReactiveUserRepository();
+	private ReactiveRepository<User> repository = new ReactiveUserRepository();
 
 //========================================================================================
 
@@ -32,9 +32,8 @@ public class Part07ReactiveToBlocking {
 		assertEquals(User.SKYLER, user);
 	}
 
-	// TODO Return the user contained in that Mono
-	User monoToValue(Mono<User> mono) {
-		return null;
+	private User monoToValue(Mono<User> mono) {
+		return mono.block();
 	}
 
 //========================================================================================
@@ -51,9 +50,8 @@ public class Part07ReactiveToBlocking {
 		assertFalse(it.hasNext());
 	}
 
-	// TODO Return the users contained in that Flux
-	Iterable<User> fluxToValues(Flux<User> flux) {
-		return null;
+	private Iterable<User> fluxToValues(Flux<User> flux) {
+		return flux.toIterable();
 	}
 
 }

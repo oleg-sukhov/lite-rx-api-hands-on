@@ -19,14 +19,14 @@ public class Part02CreateMono {
 	public void empty() {
 		Mono<String> mono = emptyMono();
 		ScriptedSubscriber
-				.expectValueCount(0)
+				.create()
+				.expectNextCount(0)
 				.expectComplete()
 				.verify(mono);
 	}
 
-	// TODO Return an empty Mono
-	Mono<String> emptyMono() {
-		return null;
+	private Mono<String> emptyMono() {
+		return Mono.empty();
 	}
 
 //========================================================================================
@@ -36,14 +36,13 @@ public class Part02CreateMono {
 		Mono<String> mono = fooMono();
 		ScriptedSubscriber
 				.create()
-				.expectValues("foo")
+				.expectNext("foo")
 				.expectComplete()
 				.verify(mono);
 	}
 
-	// TODO Return a Mono that contains a "foo" value
-	Mono<String> fooMono() {
-		return null;
+	private Mono<String> fooMono() {
+		return Mono.just("foo");
 	}
 
 //========================================================================================
@@ -57,9 +56,8 @@ public class Part02CreateMono {
 				.verify(mono);
 	}
 
-	// TODO Create a Mono that emits an IllegalStateException
-	Mono<String> errorMono() {
-		return null;
+	private Mono<String> errorMono() {
+		return Mono.error(new IllegalStateException());
 	}
 
 }

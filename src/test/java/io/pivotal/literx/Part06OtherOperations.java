@@ -4,9 +4,17 @@ import io.pivotal.literx.domain.User;
 import io.pivotal.literx.repository.ReactiveRepository;
 import io.pivotal.literx.repository.ReactiveUserRepository;
 import org.junit.Test;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.subscriber.ScriptedSubscriber;
+import reactor.util.function.Tuple3;
+
+import java.security.cert.PKIXRevocationChecker;
+import java.util.Optional;
+import java.util.function.Function;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * Learn how to use various other operators.
@@ -18,8 +26,8 @@ import reactor.test.subscriber.ScriptedSubscriber;
  */
 public class Part06OtherOperations {
 
-	final static User MARIE = new User("mschrader", "Marie", "Schrader");
-	final static User MIKE = new User("mehrmantraut", "Mike", "Ehrmantraut");
+	private static final User MARIE = new User("mschrader", "Marie", "Schrader");
+	private static final User MIKE = new User("mehrmantraut", "Mike", "Ehrmantraut");
 
 //========================================================================================
 
@@ -30,14 +38,19 @@ public class Part06OtherOperations {
 		Flux<String> lastnameFlux = Flux.just(User.SKYLER.getLastname(), User.JESSE.getLastname(), User.WALTER.getLastname(), User.SAUL.getLastname());
 		Flux<User> userFlux = userFluxFromStringFlux(usernameFlux, firstnameFlux, lastnameFlux);
 		ScriptedSubscriber.create()
-				.expectValues(User.SKYLER, User.JESSE, User.WALTER, User.SAUL)
+				.expectNext(User.SKYLER, User.JESSE, User.WALTER, User.SAUL)
 				.expectComplete()
 				.verify(userFlux);
 	}
 
-	// TODO Create a Flux of user from Flux of username, firstname and lastname.
-	Flux<User> userFluxFromStringFlux(Flux<String> usernameFlux, Flux<String> firstnameFlux, Flux<String> lastnameFlux) {
-		return null;
+	private Flux<User> userFluxFromStringFlux(Flux<String> usernameFlux, Flux<String> firstnameFlux, Flux<String> lastnameFlux) {
+		return Flux
+				.zip(usernameFlux, firstnameFlux, lastnameFlux)
+				.map(this::toUser);
+	}
+
+	private User toUser(Tuple3<String, String, String> tuple) {
+		return new User(tuple.getT1(), tuple.getT2(), tuple.getT3());
 	}
 
 //========================================================================================
@@ -48,7 +61,7 @@ public class Part06OtherOperations {
 		ReactiveRepository<User> repository2 = new ReactiveUserRepository(250, MIKE);
 		Mono<User> mono = useFastestMono(repository1.findFirst(), repository2.findFirst());
 		ScriptedSubscriber.create()
-				.expectValue(MARIE)
+				.expectNext(MARIE)
 				.expectComplete()
 				.verify(mono);
 
@@ -56,14 +69,13 @@ public class Part06OtherOperations {
 		repository2 = new ReactiveUserRepository(MIKE);
 		mono = useFastestMono(repository1.findFirst(), repository2.findFirst());
 		ScriptedSubscriber.create()
-				.expectValue(MIKE)
+				.expectNext(MIKE)
 				.expectComplete()
 				.verify(mono);
 	}
 
-	// TODO return the mono which returns faster its value
-	Mono<User> useFastestMono(Mono<User> mono1, Mono<User> mono2) {
-		return null;
+	private Mono<User> useFastestMono(Mono<User> mono1, Mono<User> mono2) {
+		return Mono.first(mono1, mono2);
 	}
 
 //========================================================================================
@@ -74,7 +86,7 @@ public class Part06OtherOperations {
 		ReactiveRepository<User> repository2 = new ReactiveUserRepository(250);
 		Flux<User> flux = useFastestFlux(repository1.findAll(), repository2.findAll());
 		ScriptedSubscriber.create()
-				.expectValues(MARIE, MIKE)
+				.expectNext(MARIE, MIKE)
 				.expectComplete()
 				.verify(flux);
 
@@ -82,14 +94,13 @@ public class Part06OtherOperations {
 		repository2 = new ReactiveUserRepository();
 		flux = useFastestFlux(repository1.findAll(), repository2.findAll());
 		ScriptedSubscriber.create()
-				.expectValues(User.SKYLER, User.JESSE, User.WALTER, User.SAUL)
+				.expectNext(User.SKYLER, User.JESSE, User.WALTER, User.SAUL)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO return the flux which returns faster the first value
-	Flux<User> useFastestFlux(Flux<User> flux1, Flux<User> flux2) {
-		return null;
+	private Flux<User> useFastestFlux(Flux<User> flux1, Flux<User> flux2) {
+		return Flux.firstEmitting(flux1, flux2);
 	}
 
 //========================================================================================
@@ -103,9 +114,8 @@ public class Part06OtherOperations {
 				.verify(completion);
 	}
 
-	// TODO Convert the input Flux<User> to a Mono<Void> that represents the complete signal of the flux
-	Mono<Void> fluxCompletion(Flux<User> flux) {
-		return null;
+	private Mono<Void> fluxCompletion(Flux<User> flux) {
+		return flux.then();
 	}
 
 //========================================================================================
@@ -114,20 +124,19 @@ public class Part06OtherOperations {
 	public void monoWithValueInsteadOfError() {
 		Mono<User> mono = betterCallSaulForBogusMono(Mono.error(new IllegalStateException()));
 		ScriptedSubscriber.create()
-				.expectValue(User.SAUL)
+				.expectNext(User.SAUL)
 				.expectComplete()
 				.verify(mono);
 
 		mono = betterCallSaulForBogusMono(Mono.just(User.SKYLER));
 		ScriptedSubscriber.create()
-				.expectValue(User.SKYLER)
+				.expectNext(User.SKYLER)
 				.expectComplete()
 				.verify(mono);
 	}
 
-	// TODO Return a Mono<User> containing Saul when an error occurs in the input Mono, else do not change the input Mono.
-	Mono<User> betterCallSaulForBogusMono(Mono<User> mono) {
-		return null;
+	private Mono<User> betterCallSaulForBogusMono(Mono<User> mono) {
+		return mono.otherwise(e -> Mono.just(User.SAUL));
 	}
 
 //========================================================================================
@@ -136,20 +145,19 @@ public class Part06OtherOperations {
 	public void fluxWithValueInsteadOfError() {
 		Flux<User> flux = betterCallSaulAndJesseForBogusFlux(Flux.error(new IllegalStateException()));
 		ScriptedSubscriber.create()
-				.expectValues(User.SAUL, User.JESSE)
+				.expectNext(User.SAUL, User.JESSE)
 				.expectComplete()
 				.verify(flux);
 
 		flux = betterCallSaulAndJesseForBogusFlux(Flux.just(User.SKYLER, User.WALTER));
 		ScriptedSubscriber.create()
-				.expectValues(User.SKYLER, User.WALTER)
+				.expectNext(User.SKYLER, User.WALTER)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Return a Flux<User> containing Saul and Jesse when an error occurs in the input Flux, else do not change the input Flux.
-	Flux<User> betterCallSaulAndJesseForBogusFlux(Flux<User> flux) {
-		return null;
+	private Flux<User> betterCallSaulAndJesseForBogusFlux(Flux<User> flux) {
+		return flux.onErrorResumeWith(throwable -> Flux.just(User.SAUL, User.JESSE));
 	}
 
 	//========================================================================================
@@ -158,7 +166,7 @@ public class Part06OtherOperations {
 	public void nullHandling() {
 		Mono<User> mono = nullAwareUserToMono(User.SKYLER);
 		ScriptedSubscriber.create()
-				.expectValues(User.SKYLER)
+				.expectNext(User.SKYLER)
 				.expectComplete()
 				.verify(mono);
 		mono = nullAwareUserToMono(null);
@@ -167,9 +175,9 @@ public class Part06OtherOperations {
 				.verify(mono);
 	}
 
-	// TODO Return a valid Mono of user for null input and non null input user (hint: Reactive Streams does not accept null values)
-	Mono<User> nullAwareUserToMono(User user) {
-		return null;
+	private Mono<User> nullAwareUserToMono(User user) {
+		//return ofNullable(user).map(Mono::just).orElse(Mono.empty());
+		return Mono.justOrEmpty(user);
 	}
 
 }

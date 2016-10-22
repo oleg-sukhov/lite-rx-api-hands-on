@@ -1,11 +1,10 @@
 package io.pivotal.literx;
 
-import java.time.Duration;
-import java.util.Arrays;
-
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.subscriber.ScriptedSubscriber;
+
+import java.time.Duration;
 
 import static java.util.Arrays.asList;
 
@@ -94,9 +93,8 @@ public class Part01CreateFlux {
 				.verify(flux);
 	}
 
-	// TODO Create a Flux that emits increasing values from 0 to 9 each 100ms
-	Flux<Long> counter() {
-		return Flux.intervalMillis(9, 100);
+	private Flux<Long> counter() {
+		return Flux.interval(Duration.ofMillis(100)).take(10);
 	}
 
 }

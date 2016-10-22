@@ -14,7 +14,7 @@ import reactor.test.subscriber.ScriptedSubscriber;
  */
 public class Part05Request {
 
-	ReactiveRepository<User> repository = new ReactiveUserRepository();
+	private ReactiveRepository<User> repository = new ReactiveUserRepository();
 
 //========================================================================================
 
@@ -25,9 +25,11 @@ public class Part05Request {
 		subscriber.verify(flux);
 	}
 
-	// TODO Create a ScriptedSubscriber that requests initially all values and expect a 4 values to be received
-	ScriptedSubscriber<Object> requestAllExpectFour() {
-		return null;
+	private ScriptedSubscriber<Object> requestAllExpectFour() {
+		return ScriptedSubscriber
+				.create()
+				.expectNextCount(4)
+				.expectComplete();
 	}
 
 //========================================================================================
@@ -39,9 +41,13 @@ public class Part05Request {
 		subscriber.verify(flux);
 	}
 
-	// TODO Create a ScriptedSubscriber that requests initially 1 value and expects {@link User.SKYLER} then requests another value and expects {@link User.JESSE}.
-	ScriptedSubscriber<Object> requestOneExpectSkylerThenRequestOneExpectJesse() {
-		return null;
+	private ScriptedSubscriber<Object> requestOneExpectSkylerThenRequestOneExpectJesse() {
+		return ScriptedSubscriber
+				.create(1)
+				.expectNext(User.SKYLER)
+				.thenRequest(1)
+				.expectNext(User.JESSE)
+				.thenCancel();
 	}
 
 //========================================================================================
@@ -50,20 +56,21 @@ public class Part05Request {
 	public void experimentWithLog() {
 		Flux<User> flux = fluxWithLog();
 		ScriptedSubscriber.create(0)
-				.doRequest(1)
-				.expectValueWith(u -> true)
-				.doRequest(1)
-				.expectValueWith(u -> true)
-				.doRequest(2)
-				.expectValueWith(u -> true)
-				.expectValueWith(u -> true)
+				.thenRequest(1)
+				.expectNextWith(u -> true)
+				.thenRequest(1)
+				.expectNextWith(u -> true)
+				.thenRequest(2)
+				.expectNextWith(u -> true)
+				.expectNextWith(u -> true)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Return a Flux with all users stored in the repository that prints automatically logs for all Reactive Streams signals
-	Flux<User> fluxWithLog() {
-		return null;
+	private Flux<User> fluxWithLog() {
+		return repository
+				.findAll()
+				.log();
 	}
 
 
@@ -72,14 +79,17 @@ public class Part05Request {
 	@Test
 	public void experimentWithDoOn() {
 		Flux<User> flux = fluxWithDoOnPrintln();
-		ScriptedSubscriber.expectValueCount(4)
+		ScriptedSubscriber.create()
+				.expectNextCount(4)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Return a Flux with all users stored in the repository that prints "Starring:" on subscribe, "firstname lastname" for all values and "The end!" on complete
-	Flux<User> fluxWithDoOnPrintln() {
-		return null;
+	private Flux<User> fluxWithDoOnPrintln() {
+		return repository.findAll()
+				.doOnSubscribe(subscription -> System.out.println("Starting!!!"))
+				.doOnNext(user -> System.out.println(user.getFirstname() + "_" + user.getLastname()))
+				.doOnComplete(() -> System.out.println("The end!"));
 	}
 
 }

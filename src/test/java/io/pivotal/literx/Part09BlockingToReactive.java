@@ -40,14 +40,15 @@ public class Part09BlockingToReactive {
 		Flux<User> flux = blockingRepositoryToFlux(repository);
 		assertEquals(0, repository.getCallCount());
 		ScriptedSubscriber.create()
-				.expectValues(User.SKYLER, User.JESSE, User.WALTER, User.SAUL)
+				.expectNext(User.SKYLER, User.JESSE, User.WALTER, User.SAUL)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Create a Flux for reading all users from the blocking repository, and run it with an elastic scheduler
-	Flux<User> blockingRepositoryToFlux(BlockingRepository<User> repository) {
-		return null;
+	private Flux<User> blockingRepositoryToFlux(BlockingRepository<User> repository) {
+		return Flux.defer(() ->
+				Flux.fromIterable(repository.findAll())
+						.subscribeOn(Schedulers.elastic()));
 	}
 
 //========================================================================================
@@ -69,9 +70,11 @@ public class Part09BlockingToReactive {
 		assertFalse(it.hasNext());
 	}
 
-	// TODO Insert users contained in the Flux parameter in the blocking repository using an parallel scheduler
-	Mono<Void> fluxToBlockingRepository(Flux<User> flux, BlockingRepository<User> repository) {
-		return null;
+	private Mono<Void> fluxToBlockingRepository(Flux<User> flux, BlockingRepository<User> repository) {
+		return flux
+				.publishOn(Schedulers.parallel())
+				.doOnNext(repository::save)
+				.then();
 	}
 
 }
