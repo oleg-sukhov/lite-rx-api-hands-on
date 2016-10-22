@@ -7,6 +7,8 @@ import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.subscriber.ScriptedSubscriber;
 
+import static java.util.Arrays.asList;
+
 /**
  * Learn how to create Flux instances.
  *
@@ -23,14 +25,14 @@ public class Part01CreateFlux {
 		Flux<String> flux = emptyFlux();
 
 		ScriptedSubscriber
-				.expectValueCount(0)
+				.create()
+				.expectNextCount(0)
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Return an empty Flux
-	Flux<String> emptyFlux() {
-		return null;
+	private Flux<String> emptyFlux() {
+		return Flux.empty();
 	}
 
 //========================================================================================
@@ -40,14 +42,13 @@ public class Part01CreateFlux {
 		Flux<String> flux = fooBarFluxFromValues();
 		ScriptedSubscriber
 				.create()
-				.expectValues("foo", "bar")
+				.expectNext("foo", "bar")
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Return a Flux that contains 2 values "foo" and "bar" without using an array or a collection
-	Flux<String> fooBarFluxFromValues() {
-		return null;
+	private Flux<String> fooBarFluxFromValues() {
+		return Flux.just("foo", "bar");
 	}
 
 //========================================================================================
@@ -57,14 +58,13 @@ public class Part01CreateFlux {
 		Flux<String> flux = fooBarFluxFromList();
 		ScriptedSubscriber
 				.create()
-				.expectValues("foo", "bar")
+				.expectNext("foo", "bar")
 				.expectComplete()
 				.verify(flux);
 	}
 
-	// TODO Create a Flux from a List that contains 2 values "foo" and "bar"
-	Flux<String> fooBarFluxFromList() {
-		return null;
+	private Flux<String> fooBarFluxFromList() {
+		return Flux.fromIterable(asList("foo", "bar"));
 	}
 
 //========================================================================================
@@ -77,9 +77,9 @@ public class Part01CreateFlux {
 				.expectError(IllegalStateException.class)
 				.verify(flux);
 	}
-	// TODO Create a Flux that emits an IllegalStateException
-	Flux<String> errorFlux() {
-		return null;
+
+	private Flux<String> errorFlux() {
+		return Flux.error(new IllegalStateException());
 	}
 
 //========================================================================================
@@ -89,14 +89,14 @@ public class Part01CreateFlux {
 		Flux<Long> flux = counter();
 		ScriptedSubscriber
 				.create()
-				.expectValues(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L)
+				.expectNext(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L)
 				.expectComplete()
 				.verify(flux);
 	}
 
 	// TODO Create a Flux that emits increasing values from 0 to 9 each 100ms
 	Flux<Long> counter() {
-		return null;
+		return Flux.intervalMillis(9, 100);
 	}
 
 }
